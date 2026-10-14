@@ -19,6 +19,7 @@ function createApp(deps = {}) {
   const { moviesProxy } = require('./handlers/moviesProxy');
   const { callAgent } = require('./agentClient');
   const { getMovieCard } = require('./moviesClient');
+  const { authLimiter, chatLimiter } = require('./rateLimit');
 
   const config = deps.config ?? loadConfig();
   const hasher = deps.hasher ?? require('./password');
@@ -39,6 +40,7 @@ function createApp(deps = {}) {
   const moviesBase = {
     baseUrl: config.moviesServiceUrl,
     internalKey: config.internalApiKey,
+    timeoutMs: config.moviesTimeoutMs,
     fetchImpl: deps.fetchImpl,
   };
 
@@ -51,8 +53,10 @@ function createApp(deps = {}) {
   );
 
   const auth = authHandlers;
-  app.post('/api/auth/register', auth.registerHandler({ users: stores.users, hasher, signer, config }));
-  app.post('/api/auth/login', auth.loginHandler({ users: stores.users, hasher, signer, config }));
+  const authThrottle = authLimiter();
+  const chatThrottle = chatLimiter();
+  app.post('/api/auth/register', authThrottle, auth.registerHandler({ users: stores.users, hasher, signer, config }));
+  app.post('/api/auth/login', authThrottle, auth.loginHandler({ users: stores.users, hasher, signer, config }));
 
   const guard = requireAuth({ secret: config.jwtSecret });
   app.get('/api/users/me', guard, auth.meHandler({ users: stores.users }));
@@ -73,6 +77,7 @@ function createApp(deps = {}) {
   const proxy = moviesProxy({
     baseUrl: config.moviesServiceUrl,
     internalKey: config.internalApiKey,
+    timeoutMs: config.moviesTimeoutMs,
     fetchImpl: deps.fetchImpl,
   });
   app.get('/api/movies*', proxy);
@@ -88,7 +93,7 @@ function createApp(deps = {}) {
   app.post('/api/chat/sessions', guard, chatHandlers.createSession(chatDeps));
   app.get('/api/chat/sessions', guard, chatHandlers.listSessions(chatDeps));
   app.get('/api/chat/sessions/:id', guard, chatHandlers.getSession(chatDeps));
-  app.post('/api/chat/sessions/:id/messages', guard, chatHandlers.postMessage(chatDeps));
+  app.post('/api/chat/sessions/:id/messages', guard, chatThrottle, chatHandlers.postMessage(chatDeps));
 
   // Internal-only endpoint (chat integration lands here in a later phase).
   app.get(

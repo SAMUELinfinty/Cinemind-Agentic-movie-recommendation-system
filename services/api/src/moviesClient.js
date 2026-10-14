@@ -23,11 +23,12 @@ function toCard(data) {
   };
 }
 
-async function getMovieCard({ baseUrl, internalKey, fetchImpl }, movieId) {
+async function getMovieCard({ baseUrl, internalKey, timeoutMs, fetchImpl }, movieId) {
   const doFetch = fetchImpl ?? globalThis.fetch;
   try {
     const res = await doFetch(`${baseUrl}/movies/${movieId}`, {
       headers: { 'X-Internal-Key': internalKey },
+      signal: timeoutMs ? AbortSignal.timeout(timeoutMs) : undefined,
     });
     if (!res || res.status !== 200) return null;
     return toCard(await res.json());

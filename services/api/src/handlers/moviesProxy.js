@@ -21,7 +21,7 @@ function isAllowedMoviePath(path) {
   return /^\/movies\/\d+$/.test(path) || /^\/movies\/\d+\/similar$/.test(path);
 }
 
-function moviesProxy({ baseUrl, internalKey, fetchImpl }) {
+function moviesProxy({ baseUrl, internalKey, timeoutMs, fetchImpl }) {
   const doFetch = fetchImpl ?? globalThis.fetch;
   return async (req, res) => {
     const upstreamPath = req.path.replace(/^\/api/, '') || '/movies';
@@ -32,6 +32,7 @@ function moviesProxy({ baseUrl, internalKey, fetchImpl }) {
     try {
       const upstream = await doFetch(`${baseUrl}${upstreamPath}${query}`, {
         headers: { 'X-Internal-Key': internalKey },
+        signal: timeoutMs ? AbortSignal.timeout(timeoutMs) : undefined,
       });
       const body = await upstream.json();
       return res.status(upstream.status).json(body);

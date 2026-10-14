@@ -21,6 +21,7 @@ function loadConfig(env = process.env) {
     moviesServiceUrl: (env.MOVIES_SERVICE_URL ?? 'http://localhost:8002').replace(/\/$/, ''),
     agentServiceUrl: (env.AGENT_SERVICE_URL ?? 'http://localhost:8001').replace(/\/$/, ''),
     agentTimeoutMs: Number(env.AGENT_TIMEOUT_MS ?? 45000),
+    moviesTimeoutMs: Number(env.MOVIES_TIMEOUT_MS ?? 15000),
     nodeEnv: env.NODE_ENV ?? 'development',
   };
 }

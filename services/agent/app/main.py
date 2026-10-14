@@ -3,9 +3,11 @@
 from fastapi import FastAPI
 
 from .config import settings
+from .ratelimit import RateLimitMiddleware
 from .routes import chat, health
 
 app = FastAPI(title="CineMind Agent Service")
+app.add_middleware(RateLimitMiddleware, max_requests=60, window_s=60.0)
 app.include_router(health.router)
 app.include_router(chat.router)
 

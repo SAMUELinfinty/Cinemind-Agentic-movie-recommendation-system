@@ -11,7 +11,8 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-package-lock.json
+# NOTE: package-lock.json files are intentionally COMMITTED (reproducible
+# Docker builds on Railway need them). Do not re-ignore them.
 .pnp/
 .pnp.js
 .yarn/

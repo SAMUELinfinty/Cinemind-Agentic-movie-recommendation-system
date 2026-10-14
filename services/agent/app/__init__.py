@@ -1,0 +1,1 @@
+"""CineMind agent service package."""

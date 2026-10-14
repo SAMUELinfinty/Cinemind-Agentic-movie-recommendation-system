@@ -1,0 +1,22 @@
+{
+  "name": "cinemind-api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "CineMind Express API gateway (port 5000). React talks to this service only.",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test tests/validate.test.js tests/middleware.test.js tests/handlers.test.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.9.5"
+  }
+}

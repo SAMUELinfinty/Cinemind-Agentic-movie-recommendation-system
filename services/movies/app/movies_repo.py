@@ -21,9 +21,20 @@ async def list_movies(collection, page: int, limit: int) -> tuple[list[dict], in
 
 
 async def search_movies(collection, q: str, page: int, limit: int) -> tuple[list[dict], int]:
-    """Case-insensitive substring match on title / original_title."""
-    pattern = {"$regex": re.escape(q.strip()), "$options": "i"}
-    filt = {"$or": [{"title": pattern}, {"original_title": pattern}]}
+    """Word-based, case-insensitive match across titles and genres.
+
+    Each query word matches as a substring of the title / original_title, or
+    as a whole genre name ("sci-fi comedy" finds comedies and sci-fi titles
+    instead of nothing). Results stay ordered by popularity.
+    """
+    words = [w for w in re.split(r"\s+", (q or "").strip()) if w]
+    or_clauses: list[dict] = []
+    for word in words:
+        title_pattern = {"$regex": re.escape(word), "$options": "i"}
+        or_clauses.append({"title": title_pattern})
+        or_clauses.append({"original_title": title_pattern})
+        or_clauses.append({"genres": {"$regex": f"^{re.escape(word)}$", "$options": "i"}})
+    filt = {"$or": or_clauses} if or_clauses else {"_id": None}
     total = await collection.count_documents(filt)
     cursor = (
         collection.find(filt, PROJECTION)

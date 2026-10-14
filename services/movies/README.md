@@ -62,7 +62,7 @@ curl http://localhost:8002/health
 | Method | Path | Response |
 |---|---|---|
 | GET | `/movies?page&limit` | `{items, page, limit, total}` (title A→Z) |
-| GET | `/movies/search?q&page&limit` | same envelope, case-insensitive title match, popularity first |
+| GET | `/movies/search?q&page&limit` | same envelope, word-based title/genre match, popularity first |
 | GET | `/movies/{movie_id}` | movie object; 404 unknown, 422 non-integer |
 | GET | `/discover?genre&year&language&min_vote&page&limit` | same envelope, popularity first |
 | GET | `/trending?limit` | `{items, limit, ranking}` — popularity DESC, vote_average tiebreak (no time field in dataset; documented proxy) |

@@ -20,6 +20,7 @@ function createApp(deps = {}) {
   const { callAgent } = require('./agentClient');
   const { getMovieCard } = require('./moviesClient');
   const { authLimiter, chatLimiter } = require('./rateLimit');
+  const { cors } = require('./cors');
 
   const config = deps.config ?? loadConfig();
   const hasher = deps.hasher ?? require('./password');
@@ -46,6 +47,7 @@ function createApp(deps = {}) {
 
   const app = express();
   app.use(express.json());
+  app.use(cors({ origins: config.corsOrigins }));
 
   app.get('/health', (req, res) => res.json({ status: 'ok', service: 'api' }));
   app.get('/', (req, res) =>
@@ -80,7 +82,7 @@ function createApp(deps = {}) {
     timeoutMs: config.moviesTimeoutMs,
     fetchImpl: deps.fetchImpl,
   });
-  app.get('/api/movies*', proxy);
+  app.get(['/api/movies*', '/api/discover', '/api/trending'], proxy);
 
   // Chat sessions: authenticated user <-> internal agent (:8001, X-Internal-Key).
   // No chat logic here — Express persists history and resolves movie cards.

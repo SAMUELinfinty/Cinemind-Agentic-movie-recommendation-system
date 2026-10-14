@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "test": "node --test tests/validate.test.js tests/middleware.test.js tests/handlers.test.js tests/chat.test.js tests/security.test.js"
+    "test": "node --test tests/validate.test.js tests/middleware.test.js tests/handlers.test.js tests/chat.test.js tests/security.test.js tests/cors.test.js"
   },
   "engines": {
     "node": ">=20"

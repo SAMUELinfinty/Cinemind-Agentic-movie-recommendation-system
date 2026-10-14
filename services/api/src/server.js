@@ -4,6 +4,14 @@
 
 require('dotenv').config();
 
+// Workaround for machines whose default resolver refuses Node's DNS
+// queries (c-ares). Set DNS_SERVERS=8.8.8.8,1.1.1.1 to override.
+if (process.env.DNS_SERVERS) {
+  require('node:dns').setServers(
+    process.env.DNS_SERVERS.split(',').map((s) => s.trim()).filter(Boolean),
+  );
+}
+
 const { loadConfig } = require('./config');
 
 async function main() {

@@ -38,3 +38,6 @@ function verifyToken(token, secret) {
 }
 
 module.exports = { signToken, verifyToken, setBackend };
+// Aliases matching the handler interface ({ sign, verify }).
+module.exports.sign = signToken;
+module.exports.verify = verifyToken;

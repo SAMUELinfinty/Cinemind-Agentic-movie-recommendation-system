@@ -67,6 +67,7 @@ async def _execute_search(args: dict, ctx: dict) -> tuple[str, list[int]]:
     limit = min(max(limit, 1), 10)
     try:
         items = await ctx["fns"][SEARCH_TOOL](str(query), limit)
+        ctx["seen"].extend(trim_results(items))
         return json.dumps(trim_results(items)), collect_movie_ids(items)
     except MoviesServiceError:
         return json.dumps({"error": "movie search is temporarily unavailable"}), []
@@ -84,6 +85,7 @@ async def _execute_details(args: dict, ctx: dict) -> tuple[str, list[int]]:
         return json.dumps({"error": "movie details are temporarily unavailable"}), []
     if doc is None:
         return json.dumps({"error": f"movie {movie_id} not found"}), []
+    ctx["seen"].extend(trim_results([doc]))
     return json.dumps(trim_results([doc])[0]), collect_movie_ids([doc])
 
 
@@ -97,6 +99,7 @@ async def _execute_discover(args: dict, ctx: dict) -> tuple[str, list[int]]:
     limit = min(max(limit, 1), 10)
     try:
         items = await ctx["fns"][DISCOVER_TOOL](filters, limit)
+        ctx["seen"].extend(trim_results(items))
         return json.dumps(trim_results(items)), collect_movie_ids(items)
     except MoviesServiceError:
         return json.dumps({"error": "movie discovery is temporarily unavailable"}), []
@@ -115,6 +118,7 @@ async def _execute_similar(args: dict, ctx: dict) -> tuple[str, list[int]]:
     limit = min(max(limit, 1), 10)
     try:
         items = await ctx["fns"][SIMILAR_TOOL](movie_id, limit)
+        ctx["seen"].extend(trim_results(items))
         return json.dumps(trim_results(items)), collect_movie_ids(items)
     except MoviesServiceError as exc:
         message = str(exc)
@@ -144,6 +148,28 @@ EXECUTORS = {
     SIMILAR_TOOL: _execute_similar,
     USER_TOOL: _execute_user_context,
 }
+
+
+def fallback_reply(seen: list[dict], movie_ids: list[int]) -> str:
+    """Template reply from grounded tool results.
+
+    Small/weak models sometimes return empty content on the tool-result turn.
+    This guarantees the user still gets an answer built ONLY from catalogue
+    data the tools actually returned — never invented titles or IDs.
+    """
+    picks: list[str] = []
+    used: set[int] = set()
+    for item in seen:
+        mid = item.get("tmdb_id")
+        if mid in movie_ids and mid not in used:
+            used.add(mid)
+            title = item.get("title") or f"Movie {mid}"
+            year = f" ({item['year']})" if item.get("year") else ""
+            picks.append(f"{title}{year} [tmdb:{mid}]")
+    if not picks:
+        return ""
+    lines = "\n".join(f"- {pick}" for pick in picks)
+    return f"Here are my picks from the catalogue:\n{lines}"
 
 
 async def run_chat(
@@ -187,7 +213,7 @@ async def run_chat(
         }
     )
     all_ids: list[int] = []
-    ctx = {"message": message, "default_limit": default_limit, "user_token": user_token, "fns": fns}
+    ctx = {"message": message, "default_limit": default_limit, "user_token": user_token, "fns": fns, "seen": []}
     for call in calls:
         name = call.get("name", "")
         executor = EXECUTORS.get(name)
@@ -217,4 +243,7 @@ async def run_chat(
         raise
     except Exception as exc:
         raise LLMError(f"language model failed: {type(exc).__name__}") from exc
-    return final.get("content") or "", all_ids
+    reply = final.get("content") or ""
+    if not reply.strip():
+        reply = fallback_reply(ctx["seen"], all_ids)
+    return reply, all_ids

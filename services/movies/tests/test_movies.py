@@ -42,7 +42,9 @@ def _match(doc, filt):
         if isinstance(cond, dict):
             if "$regex" in cond:
                 flags = re.IGNORECASE if cond.get("$options") == "i" else 0
-                if not re.search(cond["$regex"], str(value or ""), flags):
+                # MongoDB semantics: regex tests each array element.
+                candidates = value if isinstance(value, list) else [value or ""]
+                if not any(re.search(cond["$regex"], str(v or ""), flags) for v in candidates):
                     return False
             elif "$in" in cond:
                 actual = value if isinstance(value, list) else [value]
@@ -162,6 +164,18 @@ def test_search_match(client):
 def test_search_no_match(client):
     body = client.get("/movies/search", params={"q": "zzz"}).json()
     assert body == {"items": [], "page": 1, "limit": 20, "total": 0}
+
+
+def test_search_multi_word_uses_or_semantics(client):
+    body = client.get("/movies/search", params={"q": "alpha night"}).json()
+    assert body["total"] == 3
+    assert [m["title"] for m in body["items"]] == ["Alpha Dawn", "Beta Night", "Alpha Returns"]
+
+
+def test_search_matches_genre_words(client):
+    body = client.get("/movies/search", params={"q": "comedy"}).json()
+    assert body["total"] == 1
+    assert body["items"][0]["title"] == "Gamma Ray"
 
 
 def test_search_bad_query(client):

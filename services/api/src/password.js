@@ -69,3 +69,6 @@ async function comparePassword(password, hash) {
 }
 
 module.exports = { hashPassword, comparePassword, setBackend };
+// Aliases matching the handler/store interface ({ hash, compare }).
+module.exports.hash = hashPassword;
+module.exports.compare = comparePassword;

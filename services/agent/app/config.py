@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
     INTERNAL_API_KEY: str = ""
     MOVIES_SERVICE_URL: str = "http://localhost:8002"
+    EXPRESS_API_URL: str = "http://localhost:5000"
     LLM_TIMEOUT_S: float = 30.0
     MOVIES_TIMEOUT_S: float = 10.0
 

@@ -241,7 +241,7 @@ def test_chat_success_returns_ids_and_model(authed_client, monkeypatch):
             return {"content": "Try Alpha Dawn.", "tool_calls": []}
 
     monkeypatch.setattr(
-        chat_route, "get_agent_deps", lambda: {"chat_model": Scripted(), "search": search}
+        chat_route, "get_agent_deps", lambda user_token=None: {"chat_model": Scripted(), "search": search}
     )
     resp = authed_client.post(
         "/chat", json={"message": "something fun", "limit": 3}, headers={"X-Internal-Key": "test-key"}
@@ -259,7 +259,7 @@ def test_chat_llm_failure_is_502(authed_client, monkeypatch):
         return []
 
     monkeypatch.setattr(
-        chat_route, "get_agent_deps", lambda: {"chat_model": Broken(), "search": search}
+        chat_route, "get_agent_deps", lambda user_token=None: {"chat_model": Broken(), "search": search}
     )
     resp = authed_client.post(
         "/chat", json={"message": "hi"}, headers={"X-Internal-Key": "test-key"}

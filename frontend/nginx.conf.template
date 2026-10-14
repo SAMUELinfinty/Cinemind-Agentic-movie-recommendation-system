@@ -1,0 +1,19 @@
+server {
+  listen ${PORT} default_server;
+  root /usr/share/nginx/html;
+  index index.html;
+
+  # SPA fallback: every route serves index.html
+  location / {
+    try_files $uri $uri/ /index.html;
+  }
+
+  # Hashed Vite assets: cache aggressively
+  location /assets/ {
+    expires 30d;
+    add_header Cache-Control "public, immutable";
+  }
+
+  gzip on;
+  gzip_types text/css application/javascript image/svg+xml;
+}

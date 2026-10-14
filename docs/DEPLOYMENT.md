@@ -52,7 +52,6 @@ curl "https://<api>.onrender.com/api/trending?limit=1"
 ```
 
 ## Local prod-like run (needs Docker Desktop)
-
 ```powershell
 $env:MONGODB_URI="<atlas-uri>"; $env:INTERNAL_API_KEY="<k>"; $env:JWT_SECRET="<j>"
 $env:OPENROUTER_API_KEY="<k>"; $env:OPENROUTER_MODEL="liquid/lfm-2.5-2.6b:free"
@@ -65,3 +64,18 @@ docker compose up --build
   (45s default) may need raising on sleepy free tiers.
 - Rotate `INTERNAL_API_KEY`/`JWT_SECRET` for production (generate fresh ones
   in the dashboards, not the demo values in local `.env` files).
+
+## Alternative: everything on Railway (no Vercel)
+
+The frontend ships an nginx `Dockerfile`, so Railway can host all four
+services in one project:
+
+1. Add a 4th service from the repo, **Root Directory `frontend/`**.
+2. Set its variable `VITE_API_URL=https://<api>.up.railway.app`
+   (baked in at build time — redeploy the frontend if the API URL changes).
+3. **Settings → Networking → Generate Domain** for the frontend service.
+4. Set the api service's `CORS_ORIGIN` to that frontend domain and redeploy
+   the api service.
+
+Internal traffic stays on `*.railway.internal` hostnames exactly as in the
+table above; only the api and frontend services need public domains.

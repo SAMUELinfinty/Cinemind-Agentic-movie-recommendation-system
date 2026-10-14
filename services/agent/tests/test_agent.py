@@ -17,7 +17,7 @@ def anyio_backend():
 from app.config import settings
 from app.main import app
 from app.movies_client import MoviesServiceError, build_search_request, search_movies
-from app.orchestrator import LLMError, collect_movie_ids, run_chat
+from app.orchestrator import LLMError, collect_movie_ids, reason_for, run_chat
 from app.tools import SYSTEM_PROMPT, TOOL_SPEC, create_search_tool, trim_results
 
 
@@ -131,6 +131,35 @@ async def test_llm_timeout_raises():
 
 
 def test_collect_movie_ids_dedupes_and_skips_junk():
+    assert collect_movie_ids(
+        [{"tmdb_id": 1}, {"tmdb_id": 2}, {"tmdb_id": 1}, {"tmdb_id": "x"}, {}, {"tmdb_id": True}]
+    ) == [1, 2]
+
+
+def test_reason_for_handles_missing_fields():
+    assert reason_for({}) == ""
+    assert reason_for({"vote_average": 5.5}) == "5.5/10 audience score"
+    assert reason_for({"genres": ["Action", "Drama", "X"]}) == "Action · Drama"
+
+
+async def test_fallback_lists_data_grounded_reasons():
+    async def search(query, limit=5):
+        return [
+            {"tmdb_id": 11, "title": "Star Wars", "year": 1977, "genres": ["Sci-Fi"], "vote_average": 8.6},
+            {"tmdb_id": 12, "title": "No Data", "year": None, "genres": [], "vote_average": None},
+        ]
+
+    model = FakeChatModel(
+        [
+            {"content": "", "tool_calls": [{"id": "c1", "name": "search_movies", "args": {"query": "sci-fi"}}]},
+            {"content": "", "tool_calls": []},  # terse model: fallback must still explain
+        ]
+    )
+    reply, ids = await run_chat("why these picks?", chat_model=model, search_movies=search)
+    assert ids == [11, 12]
+    assert "★ 8.6/10 audience score" in reply
+    assert "Sci-Fi" in reply
+    assert "No Data (2026)" not in reply  # no invented year
     assert collect_movie_ids(
         [{"tmdb_id": 1}, {"tmdb_id": 2}, {"tmdb_id": 1}, {"tmdb_id": "x"}, {}, {"tmdb_id": True}]
     ) == [1, 2]

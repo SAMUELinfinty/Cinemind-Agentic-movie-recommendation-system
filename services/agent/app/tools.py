@@ -131,7 +131,8 @@ SYSTEM_PROMPT = (
     "If tools return nothing or fail, say so in one sentence and ask ONE clarifying question. "
     "If the watchlist and ratings are empty, give general catalogue picks and say so. "
     "STYLE: conversational and brief, 3-5 picks with title, year, and a one-line reason each, "
-    "plain text, under ~150 words unless the user asks for more."
+    "plain text, under ~150 words unless the user asks for more. "
+    "Ground every reason in tool data (audience score, shared genres, matching filter or year)."
 )
 
 

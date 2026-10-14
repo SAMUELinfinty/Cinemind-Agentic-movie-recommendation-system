@@ -165,6 +165,28 @@ EXECUTORS = {
 }
 
 
+def reason_for(item: dict) -> str:
+    """One-line, data-grounded reason for a pick.
+
+    Built ONLY from fields the tools returned (rating, genres, year), so the
+    agent can explain picks even when the model itself stays terse. Never
+    invents watchlist matches or tastes.
+    """
+    bits: list[str] = []
+    vote = item.get("vote_average")
+    if isinstance(vote, bool):
+        vote = None
+    if isinstance(vote, (int, float)):
+        bits.append(f"★ {vote}/10 audience score" if vote >= 7 else f"{vote}/10 audience score")
+    genres = [g for g in (item.get("genres") or []) if isinstance(g, str)][:2]
+    if genres:
+        bits.append(" · ".join(genres))
+    year = item.get("year")
+    if isinstance(year, int) and not isinstance(year, bool) and year >= 2024:
+        bits.append(f"fresh {year} release")
+    return " — ".join(bits)
+
+
 def fallback_reply(seen: list[dict], movie_ids: list[int]) -> str:
     """Template reply from grounded tool results.
 
@@ -180,7 +202,11 @@ def fallback_reply(seen: list[dict], movie_ids: list[int]) -> str:
             used.add(mid)
             title = item.get("title") or f"Movie {mid}"
             year = f" ({item['year']})" if item.get("year") else ""
-            picks.append(f"{title}{year} [tmdb:{mid}]")
+            line = f"{title}{year} [tmdb:{mid}]"
+            why = reason_for(item)
+            if why:
+                line += f" — {why}"
+            picks.append(line)
     if not picks:
         return ""
     lines = "\n".join(f"- {pick}" for pick in picks)

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="CineMind logo">
+  <circle cx="32" cy="32" r="29" fill="#0B0B0D" stroke="#F3F0EB" stroke-width="2.5"/>
+  <g fill="#F3F0EB" opacity="0.85">
+    <circle cx="32" cy="8.5" r="2.2"/>
+    <circle cx="32" cy="55.5" r="2.2"/>
+    <circle cx="8.5" cy="32" r="2.2"/>
+    <circle cx="55.5" cy="32" r="2.2"/>
+    <circle cx="15.4" cy="15.4" r="2.2"/>
+    <circle cx="48.6" cy="15.4" r="2.2"/>
+    <circle cx="15.4" cy="48.6" r="2.2"/>
+    <circle cx="48.6" cy="48.6" r="2.2"/>
+  </g>
+  <path d="M27 22.5v19l15.5-9.5z" fill="#E53945"/>
+</svg>

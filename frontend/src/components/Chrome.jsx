@@ -6,8 +6,11 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-night/95 backdrop-blur">
       <nav className="mx-auto flex h-14 max-w-7xl items-center gap-6 px-4 sm:px-6">
-        <Link to="/" className="font-display text-xl tracking-wide">
-          Cine<span className="text-crimson">Mind</span>
+        <Link to="/" className="flex items-center gap-2" aria-label="CineMind home">
+          <img src="/logo.svg" alt="" aria-hidden="true" className="h-7 w-7" />
+          <span className="font-display text-xl tracking-wide">
+            Cine<span className="text-crimson">Mind</span>
+          </span>
         </Link>
         <div className="flex items-center gap-4 text-sm text-ash">
           <Link to="/movies" className="transition hover:text-parchment">

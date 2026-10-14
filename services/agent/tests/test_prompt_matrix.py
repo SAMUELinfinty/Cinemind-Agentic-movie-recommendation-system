@@ -113,7 +113,7 @@ async def test_04_details_request():
         functions=fns(get_movie_details=details),
     )
     assert ids == [11]
-    assert json.loads(tools[0]["content"])["vote_average"] == 8.6
+    assert json.loads(tools[0]["content"])["movie"]["vote_average"] == 8.6
 
 
 # 5. genre + year filter -> discover

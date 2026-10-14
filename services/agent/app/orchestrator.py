@@ -74,7 +74,12 @@ async def _execute_search(args: dict, ctx: dict) -> tuple[str, list[int]]:
 
 
 async def _execute_details(args: dict, ctx: dict) -> tuple[str, list[int]]:
-    """Run one get_movie_details call. Returns (tool content, movie ids)."""
+    """Run one get_movie_details call. Returns (tool content, movie ids).
+
+    Always attaches similar films: weak models often stop after a single
+    tool call ("tell me about X and suggest similar" then yields only X),
+    so the details answer carries its similar titles with it.
+    """
     try:
         movie_id = int(args.get("movie_id"))
     except (TypeError, ValueError):
@@ -85,8 +90,18 @@ async def _execute_details(args: dict, ctx: dict) -> tuple[str, list[int]]:
         return json.dumps({"error": "movie details are temporarily unavailable"}), []
     if doc is None:
         return json.dumps({"error": f"movie {movie_id} not found"}), []
+    trimmed = trim_results([doc])[0]
     ctx["seen"].extend(trim_results([doc]))
-    return json.dumps(trim_results([doc])[0]), collect_movie_ids([doc])
+    similar_items: list[dict] = []
+    similar_fn = ctx["fns"].get(SIMILAR_TOOL)
+    if similar_fn is not None:
+        try:
+            similar_items = await similar_fn(movie_id, 5)
+            ctx["seen"].extend(trim_results(similar_items))
+        except MoviesServiceError:
+            similar_items = []
+    content = json.dumps({"movie": trimmed, "similar": trim_results(similar_items)})
+    return content, collect_movie_ids([doc] + similar_items)
 
 
 async def _execute_discover(args: dict, ctx: dict) -> tuple[str, list[int]]:

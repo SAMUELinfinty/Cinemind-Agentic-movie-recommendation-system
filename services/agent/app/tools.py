@@ -34,11 +34,12 @@ TOOL_SPEC: dict = {
 DETAILS_SPEC: dict = {
     "name": "get_movie_details",
     "description": (
-        "Fetch full details for one movie by its numeric tmdb_id. "
-        "Use this when the user asks about a specific movie or you need "
-        "verified data (year, genres, rating, overview) before recommending it. "
+        "Fetch full details for one movie by its numeric tmdb_id, together "
+        "with similar films. Use this when the user asks about a specific movie "
+        "or you need verified data (year, genres, rating, overview) before "
+        "recommending it — the similar titles cover 'more like this' in the same call. "
         "Args: movie_id (integer tmdb_id, required). "
-        "Returns the movie object, or an error when the id is unknown."
+        "Returns {movie, similar}, or an error when the id is unknown."
     ),
     "parameters": {
         "type": "object",
@@ -170,6 +171,7 @@ def create_search_tool(
 
 def create_details_tool(
     details_fn: Callable[..., Awaitable[dict | None]],
+    similar_fn: Callable[..., Awaitable[list[dict]]] | None = None,
 ):
     """Build the real LangChain tool around an async details function."""
     from langchain_core.tools import StructuredTool  # lazy: langchain only needed in production
@@ -178,7 +180,13 @@ def create_details_tool(
         doc = await details_fn(int(movie_id))
         if doc is None:
             return json.dumps({"error": f"movie {movie_id} not found"})
-        return json.dumps(trim_results([doc])[0])
+        similar: list[dict] = []
+        if similar_fn is not None:
+            try:
+                similar = await similar_fn(int(movie_id), 5)
+            except Exception:
+                similar = []
+        return json.dumps({"movie": trim_results([doc])[0], "similar": trim_results(similar)})
 
     return StructuredTool.from_function(
         func=None,

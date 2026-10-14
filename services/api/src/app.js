@@ -15,7 +15,10 @@ function createApp(deps = {}) {
   const authHandlers = require('./handlers/auth');
   const ratingsHandlers = require('./handlers/ratings');
   const watchlistHandlers = require('./handlers/watchlist');
+  const chatHandlers = require('./handlers/chat');
   const { moviesProxy } = require('./handlers/moviesProxy');
+  const { callAgent } = require('./agentClient');
+  const { getMovieCard } = require('./moviesClient');
 
   const config = deps.config ?? loadConfig();
   const hasher = deps.hasher ?? require('./password');
@@ -24,6 +27,19 @@ function createApp(deps = {}) {
     users: deps.users,
     ratings: deps.ratings,
     watchlist: deps.watchlist,
+    sessions: deps.sessions,
+    messages: deps.messages,
+  };
+  const agentBase = {
+    baseUrl: config.agentServiceUrl,
+    internalKey: config.internalApiKey,
+    timeoutMs: config.agentTimeoutMs,
+    fetchImpl: deps.fetchImpl,
+  };
+  const moviesBase = {
+    baseUrl: config.moviesServiceUrl,
+    internalKey: config.internalApiKey,
+    fetchImpl: deps.fetchImpl,
   };
 
   const app = express();
@@ -40,7 +56,6 @@ function createApp(deps = {}) {
 
   const guard = requireAuth({ secret: config.jwtSecret });
   app.get('/api/users/me', guard, auth.meHandler({ users: stores.users }));
-
   app.get('/api/ratings', guard, ratingsHandlers.listRatings({ ratings: stores.ratings }));
   app.post('/api/ratings', guard, ratingsHandlers.putRating({ ratings: stores.ratings }));
   app.put('/api/ratings/:movieId', guard, ratingsHandlers.putRating({ ratings: stores.ratings }));
@@ -61,6 +76,19 @@ function createApp(deps = {}) {
     fetchImpl: deps.fetchImpl,
   });
   app.get('/api/movies*', proxy);
+
+  // Chat sessions: authenticated user <-> internal agent (:8001, X-Internal-Key).
+  // No chat logic here — Express persists history and resolves movie cards.
+  const chatDeps = {
+    sessions: stores.sessions,
+    messages: stores.messages,
+    agentCall: (payload) => callAgent(agentBase, payload),
+    getMovie: (id) => getMovieCard(moviesBase, id),
+  };
+  app.post('/api/chat/sessions', guard, chatHandlers.createSession(chatDeps));
+  app.get('/api/chat/sessions', guard, chatHandlers.listSessions(chatDeps));
+  app.get('/api/chat/sessions/:id', guard, chatHandlers.getSession(chatDeps));
+  app.post('/api/chat/sessions/:id/messages', guard, chatHandlers.postMessage(chatDeps));
 
   // Internal-only endpoint (chat integration lands here in a later phase).
   app.get(

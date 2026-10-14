@@ -20,6 +20,7 @@ function loadConfig(env = process.env) {
     internalApiKey: env.INTERNAL_API_KEY ?? (env.NODE_ENV === 'test' ? 'test-internal-key' : required('INTERNAL_API_KEY')),
     moviesServiceUrl: (env.MOVIES_SERVICE_URL ?? 'http://localhost:8002').replace(/\/$/, ''),
     agentServiceUrl: (env.AGENT_SERVICE_URL ?? 'http://localhost:8001').replace(/\/$/, ''),
+    agentTimeoutMs: Number(env.AGENT_TIMEOUT_MS ?? 45000),
     nodeEnv: env.NODE_ENV ?? 'development',
   };
 }

@@ -44,6 +44,32 @@ function validateReview(review) {
   return null;
 }
 
+function validateChatMessage(message) {
+  if (typeof message !== 'string' || message.trim() === '') return 'message is required';
+  if (message.length > 2000) return 'message is too long';
+  return null;
+}
+
+function validateSessionTitle(title) {
+  if (title === undefined) return null;
+  if (typeof title !== 'string' || title.trim() === '') return 'title must be a non-empty string';
+  if (title.trim().length > 100) return 'title is too long';
+  return null;
+}
+
+function validateSessionId(id) {
+  if (typeof id !== 'string' || id.trim() === '') return 'session id is required';
+  return null;
+}
+
+function validateChatLimit(limit) {
+  if (limit === undefined) return null;
+  const n = Number(limit);
+  if (!Number.isInteger(n)) return 'limit must be an integer';
+  if (n < 1 || n > 10) return 'limit must be between 1 and 10';
+  return null;
+}
+
 module.exports = {
   validateEmail,
   validatePassword,
@@ -51,4 +77,8 @@ module.exports = {
   validateMovieId,
   validateScore,
   validateReview,
+  validateChatMessage,
+  validateSessionTitle,
+  validateSessionId,
+  validateChatLimit,
 };
